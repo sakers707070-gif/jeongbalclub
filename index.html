@@ -41,12 +41,29 @@ const SUPABASE_URL = 'https://dbnpbdlohzponmffbqgt.supabase.co';
 ];
 let applications=JSON.parse(localStorage.getItem('jb_apps')||'[]');
  async function saveToSupabase(data){
+  const row = {
+    name: data.name,
+    phone: data.phone,
+    attendance: data.attend,
+    guests: data.guests,
+    memo: data.memo,
+    kind: data.kind
+  };
+
   const response = await fetch(`${SUPABASE_URL}/rest/v1/event_applications`, {
-   method: 'POST',
-   headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
-   body: JSON.stringify(data)
-    });
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(row)
+  });
+
+  if(!response.ok){
+    throw new Error(await response.text());
   }
+}
 function layout(x){document.getElementById('view').innerHTML=x;document.getElementById('back').classList.toggle('hidden',location.hash==='#home'||!location.hash)}
 function go(p){location.hash=p;render()}
 function home(){return `<section class="hero"><h1>함께하는 골프,<br>더 즐거운 인생!</h1><p>건강한 오늘, 행복한 정발클럽</p></section>
@@ -68,7 +85,29 @@ function eventForm(kind='행사'){return `<div class="sectionhead" style="backgr
 <label>동반 인원</label><select name="guests"><option>0명</option><option>1명</option><option>2명</option><option>3명 이상</option></select>
 <label>추가사항</label><textarea name="memo" placeholder="전달할 내용이 있으면 적어주세요."></textarea>
 <button class="btn green">신청하기</button></form>`}
-function submitApp(e,kind){e.preventDefault();let d=Object.fromEntries(new FormData(e.target));d.kind=kind;d.time=new Date().toLocaleString();applications.push(d);localStorage.setItem('jb_apps',JSON.stringify(applications));go('success')}
+async function submitApp(e,kind){
+  e.preventDefault();
+  const f=e.target;
+  const data={
+    name:f.name.value,
+    phone:f.phone.value,
+    attend:f.attend.value,
+    guests:f.guests.value,
+    memo:f.memo.value,
+    kind:kind
+  };
+
+  try{
+    await saveToSupabase(data);
+    applications.push(data);
+    localStorage.setItem('jb_apps',JSON.stringify(applications));
+    go('success');
+  }catch(err){
+    alert('신청 저장 중 오류가 발생했습니다.');
+    console.error(err);
+  }
+}
+ 
 function success(){return `<div class="success"><div class="check">✓</div><h1>신청이 완료되었습니다!</h1><p>정상적으로 접수되었습니다.</p><button class="btn" onclick="go('home')">확인</button></div>`}
 function schedule(){return `<div class="sectionhead">🗓️ 클럽 일정</div><div class="page"><h2>2026년 9월</h2><div class="calendar">${['일','월','화','수','목','금','토',...Array.from({length:30},(_,i)=>i+1)].map(x=>`<div class="${x===30?'today':''}">${x}</div>`).join('')}</div><div class="card"><b>9월 30일</b>　컨테이너 개소식</div><div class="card"><b>10월</b>　정발클럽 힐링여행</div><div class="card"><b>11월 7일</b>　가족사랑 대회</div></div>`}
 function member(){return `<div class="sectionhead" style="background:#5b59d6">👥 회원 공간</div><div class="page"><div class="card">👤 <b>회원 명단</b><p>회원 정보는 관리자 권한 연결 후 제공됩니다.</p></div><div class="card">✏️ <b>내 정보 수정</b></div><div class="card">💳 <b>회비 납부 내역</b></div><div class="card">✉️ <b>쪽지함</b></div></div>`}
