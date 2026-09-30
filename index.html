@@ -114,7 +114,23 @@ function member(){return `<div class="sectionhead" style="background:#5b59d6">�
 function gallery(){return `<div class="sectionhead" style="background:#079b88">🖼️ 사진첩</div><div class="page"><div class="gallery">${['🏌️','⛳','🏆','🎉','🌳','📷'].map(x=>`<div class="ph">${x}</div>`).join('')}</div></div>`}
 function admin(){return `<div class="sectionhead" style="background:#263442">⚙️ 관리자 화면</div><div class="page"><p>현재 시제품에서는 로그인 없이 관리자 화면을 체험할 수 있습니다.</p><div class="admin-grid"><button onclick="alert('다음 버전에서 공지 등록 기능을 연결합니다.')">📣 공지 관리</button><button onclick="go('schedule')">📅 일정 관리</button><button onclick="go('applicants')">📝 행사 신청자</button><button onclick="go('applicants')">🏆 대회 신청자</button><button>👥 회원 관리</button><button>🖼️ 사진 관리</button></div></div>`}
 function applicants(){return `<div class="sectionhead">👥 신청자 명단</div><div class="page"><div class="card"><b>총 신청 ${applications.length}명</b></div><table><thead><tr><th>구분</th><th>이름</th><th>연락처</th><th>참석</th><th>동반</th></tr></thead><tbody>${applications.map(a=>`<tr><td>${a.kind}</td><td>${a.name}</td><td>${a.phone}</td><td>${a.attend}</td><td>${a.guests}</td></tr>`).join('')||'<tr><td colspan="5">아직 신청자가 없습니다.</td></tr>'}</tbody></table></div>`}
-function render(){let p=(location.hash||'#home').slice(1);let x=p==='home'?home():p==='notices'?noticesPage():p.startsWith('notice-')?notice(+p.split('-')[1]):p==='event'?eventForm():p==='contest'?eventForm('대회'):p==='success'?success():p==='schedule'?schedule():p==='member'?member():p==='gallery'?gallery():p==='admin'?admin():p==='applicants'?applicants():home();layout(x)}
+async function loadApplications(){
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/event_applications?select=*`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    }
+  });
+
+  if(!response.ok){
+    console.error(await response.text());
+    return;
+  }
+
+  applications = await response.json();
+  localStorage.setItem('jb_apps', JSON.stringify(applications));
+}
+ function render(){let p=(location.hash||'#home').slice(1);let x=p==='home'?home():p==='notices'?noticesPage():p.startsWith('notice-')?notice(+p.split('-')[1]):p==='event'?eventForm():p==='contest'?eventForm('대회'):p==='success'?success():p==='schedule'?schedule():p==='member'?member():p==='gallery'?gallery():p==='admin'?admin():p==='applicants'?applicants():home();layout(x)}
 window.addEventListener('hashchange',render);render();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
  
