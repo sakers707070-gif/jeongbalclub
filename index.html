@@ -82,7 +82,7 @@ function eventForm(kind='행사'){return `<div class="sectionhead" style="backgr
 <label>이름 *</label><input name="name" required placeholder="이름을 입력하세요">
 <label>연락처 *</label><input name="phone" required inputmode="tel" placeholder="010-0000-0000">
 <label>참석 여부 *</label><select name="attend"><option>참석합니다</option><option>참석하지 않습니다</option></select>
-<label>동반 인원</label><select name="guests"><option>0명</option><option>1명</option><option>2명</option><option>3명 이상</option></select>
+<label>동반 인원</label><select name="guests"><option>0</option><option>1</option><option>2</option><option>3</option></select>
 <label>추가사항</label><textarea name="memo" placeholder="전달할 내용이 있으면 적어주세요."></textarea>
 <button class="btn green">신청하기</button></form>`}
 async function submitApp(e,kind){
