@@ -45,7 +45,7 @@ let applications=JSON.parse(localStorage.getItem('jb_apps')||'[]');
     name: data.name,
     phone: data.phone,
     attendance: data.attend,
-    guests: data.guests,
+   guests: parseInt(data.guests) || 0,
     memo: data.memo,
     kind: data.kind
   };
