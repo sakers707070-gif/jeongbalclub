@@ -92,7 +92,7 @@ async function submitApp(e,kind){
     name:f.name.value,
     phone:f.phone.value,
     attend:f.attend.value,
-    guests:f.guests.value,
+    guests: parseInt(f.guests.value) || 0,
     memo:f.memo.value,
     kind:kind
   };
