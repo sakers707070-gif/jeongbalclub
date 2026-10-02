@@ -113,31 +113,55 @@ function schedule(){return `<div class="sectionhead">🗓️ 클럽 일정</div>
 function member(){return `<div class="sectionhead" style="background:#5b59d6">👥 회원 공간</div><div class="page"><div class="card">👤 <b>회원 명단</b><p>회원 정보는 관리자 권한 연결 후 제공됩니다.</p></div><div class="card">✏️ <b>내 정보 수정</b></div><div class="card">💳 <b>회비 납부 내역</b></div><div class="card">✉️ <b>쪽지함</b></div></div>`}
 function gallery(){return `<div class="sectionhead" style="background:#079b88">🖼️ 사진첩</div><div class="page"><div class="gallery">${['🏌️','⛳','🏆','🎉','🌳','📷'].map(x=>`<div class="ph">${x}</div>`).join('')}</div></div>`}
 function adminPanel(){return `<div class="sectionhead" style="background:#263442">⚙️ 관리자 화면</div><div class="page"><p>현재 시제품에서는 로그인 없이 관리자 화면을 체험할 수 있습니다.</p><div class="admin-grid"><button onclick="alert('다음 버전에서 공지 등록 기능을 연결합니다.')">📣 공지 관리</button><button onclick="go('schedule')">📅 일정 관리</button><button onclick="go('applicants')">📝 행사 신청자</button><button onclick="go('applicants')">🏆 대회 신청자</button><button>👥 회원 관리</button><button>🖼️ 사진 관리</button></div></div>`}
- function adminLogin(){
+ async function adminLogin(){
   const email = prompt('관리자 이메일을 입력하세요.');
+  if (!email) return;
+
   const password = prompt('관리자 비밀번호를 입력하세요.');
-  if(!email || !password) return;
- const response = await fetch(`${SUPABASE_URL}/auth/v1/token? grant_type=password`,{
-   method: 'POST',
-   headers: {'apikey':SUPABASE_KEY, 'Content-Type':'application/json'},
-   body: JSON.stringfy({email,password})
-  });
-  const data = await response.json();
-  if (!response.ok) {alert('이메일 또는 비밀번호를 확인해주세요.'); return;}
-  sessionStorage.setItem('jb_admin_token', data.access_token);
-  render();
- }
- function admin(){
+  if (!password) return;
+
+  try {
+    const response = await fetch(
+      SUPABASE_URL + '/auth/v1/token?grant_type=password',
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email, password: password })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert('이메일 또는 비밀번호를 확인해주세요.');
+      return;
+    }
+
+    sessionStorage.setItem('jb_admin_token', data.access_token);
+    render();
+  } catch (error) {
+    alert('로그인 중 오류가 발생했습니다.');
+  }
+}
+
+function admin(){
   const token = sessionStorage.getItem('jb_admin_token');
-  if (token) return adminPanel();
-  return `<div class="sectionhead" style="background:#263442"> 관리자 로그인</div><div class="page"><button onclick="adminLogin()">관리자 로그인</button></div>`;
- }
+
+  if (token) {
+    return adminPanel();
+  }
+
+  return '<div class="sectionhead" style="background:#263442">🔐 관리자 로그인</div><div class="page"><button onclick="adminLogin()">관리자 로그인</button></div>';
+}
 function applicants(){return `<div class="sectionhead">👥 신청자 명단</div><div class="page"><div class="card"><b>총 신청 ${applications.length}명</b></div><table><thead><tr><th>구분</th><th>이름</th><th>연락처</th><th>참석</th><th>동반</th></tr></thead><tbody>${applications.map(a=>`<tr><td>${a.kind}</td><td>${a.name}</td><td>${a.phone}</td><td>${a.attend}</td><td>${a.guests}</td></tr>`).join('')||'<tr><td colspan="5">아직 신청자가 없습니다.</td></tr>'}</tbody></table></div>`}
 async function loadApplications(){
   const response = await fetch(`${SUPABASE_URL}/rest/v1/event_applications?select=*`, {
     headers: {
       'apikey': SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`
+     'Authorization': `Bearer ${sessionStorage.getItem('jb_admin_token')}`
     }
   });
 
