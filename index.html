@@ -130,7 +130,7 @@ function adminPanel(){return `<div class="sectionhead" style="background:#263442
  function admin(){
   const token = sessionStorage.getItem('jb_admin_token');
   if (token) return adminPanel();
-  return <div class="sectionhead" style="background:#263442"> 관리자 로그인</div><div class="page"><button onclick="adminLogin()">관리자 로그인</button></div>;
+  return `<div class="sectionhead" style="background:#263442"> 관리자 로그인</div><div class="page"><button onclick="adminLogin()">관리자 로그인</button></div>`;
  }
 function applicants(){return `<div class="sectionhead">👥 신청자 명단</div><div class="page"><div class="card"><b>총 신청 ${applications.length}명</b></div><table><thead><tr><th>구분</th><th>이름</th><th>연락처</th><th>참석</th><th>동반</th></tr></thead><tbody>${applications.map(a=>`<tr><td>${a.kind}</td><td>${a.name}</td><td>${a.phone}</td><td>${a.attend}</td><td>${a.guests}</td></tr>`).join('')||'<tr><td colspan="5">아직 신청자가 없습니다.</td></tr>'}</tbody></table></div>`}
 async function loadApplications(){
