@@ -117,7 +117,7 @@ function schedule(){return `<div class="sectionhead">🗓️ 클럽 일정</div>
 function member(){return `<div class="sectionhead" style="background:#5b59d6">👥 회원 공간</div><div class="page"><div class="card">👤 <b>회원 명단</b><p>회원 정보는 관리자 권한 연결 후 제공됩니다.</p></div><div class="card">✏️ <b>내 정보 수정</b></div><div class="card">💳 <b>회비 납부 내역</b></div><div class="card">✉️ <b>쪽지함</b></div></div>`}
 function gallery(){return `<div class="sectionhead" style="background:#079b88">🖼️ 사진첩</div><div class="page"><div class="gallery">${['🏌️','⛳','🏆','🎉','🌳','📷'].map(x=>`<div class="ph">${x}</div>`).join('')}</div></div>`}
 function adminPanel(){return `<div class="sectionhead" style="background:#263442">⚙️ 관리자 화면</div><div class="page"><p>관리자 전용 화면입니다.</p><button class="btn" onclick="adminLogout()">로그아웃</button><div class="admin-grid"><div class="admin-grid"><button onclick="layout(noticeAdmin())">📣 공지 관리</button><button onclick="go('schedule')">📅 일정 관리</button><button onclick="go('applicants')">📝 행사 신청자</button><button onclick="go('applicants')">🏆 대회 신청자</button><button>👥 회원 관리</button><button>🖼️ 사진 관리</button></div></div>`}
- function noticeAdmin(){return `<div class="sectionhead" style="background:#263442">📢 공지 관리</div><div class="page"><div class="card"><h2>새 공지 등록</h2><label>분류</label><input id="noticeTag" placeholder="예: 일반공지"><label>제목</label><input id="noticeTitle" placeholder="공지 제목을 입력하세요"><label>날짜</label><input id="noticeDate" type="date"><label>내용</label><textarea id="noticeContent" placeholder="공지 내용을 입력하세요"></textarea><button class="btn" onclick="saveNotice()">공지 등록</button></div></div>`;}
+ function noticeAdmin(){return `<div class="sectionhead" style="background:#263442">📢 공지 관리</div><div class="page"><div class="card"><h2>새 공지 등록</h2><label>분류</label><input id="noticeTag" placeholder="예: 일반공지"><label>제목</label><input id="noticeTitle" placeholder="공지 제목을 입력하세요"><label>날짜</label><input id="noticeDate" type="date"><label>내용</label><textarea id="noticeContent" placeholder="공지 내용을 입력하세요"></textarea><button class="btn" onclick="saveNotice()">공지 등록</button><button class="btn" onclick="manageNotices()">📋 기존 공지 관리</button></div></div>`;}
  function adminLogout(){sessionStorage.removeItem('jb_admin_token');location.hash='#home';render();}
 
  function saveNotice(){
@@ -132,6 +132,124 @@ function adminPanel(){return `<div class="sectionhead" style="background:#263442
   }
 
   saveNoticeToSupabase(category,title,date,content);
+}
+ async function manageNotices(){
+  const token=sessionStorage.getItem('jb_admin_token');
+  const response=await fetch(SUPABASE_URL+'/rest/v1/notices?select=*&order=notice_date.desc',{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+token}
+  });
+
+  if(!response.ok){
+    alert('공지 목록을 불러오지 못했습니다.');
+    return;
+  }
+
+  const data=await response.json();
+
+  let html='<div class="sectionhead" style="background:#263442">📋 등록된 공지 관리</div><div class="page">';
+
+  data.forEach(n=>{
+    html+=`<div class="card">
+      <span class="tag">${n.tag}</span>
+      <div class="date">${n.notice_date}</div>
+      <h3>${n.title}</h3>
+      <p>${n.content}</p>
+      <button class="btn" onclick="editNotice('${n.id}')">✏️ 수정</button>
+      <button class="btn red" onclick="deleteNotice('${n.id}')">🗑 삭제</button>
+    </div>`;
+  });
+
+  html+='</div>';
+  layout(html);
+}
+ async function deleteNotice(id){
+  if(!confirm('이 공지를 정말 삭제하시겠습니까?')) return;
+
+  const token=sessionStorage.getItem('jb_admin_token');
+
+  const response=await fetch(
+    SUPABASE_URL+'/rest/v1/notices?id=eq.'+encodeURIComponent(id),
+    {
+      method:'DELETE',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+token
+      }
+    }
+  );
+
+  if(!response.ok){
+    alert('공지 삭제에 실패했습니다.');
+    return;
+  }
+
+  alert('공지가 삭제되었습니다.');
+  manageNotices();
+}
+ async function editNotice(id){
+  const token=sessionStorage.getItem('jb_admin_token');
+
+  const response=await fetch(
+    SUPABASE_URL+'/rest/v1/notices?id=eq.'+encodeURIComponent(id)+'&select=*',
+    {
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+token
+      }
+    }
+  );
+
+  if(!response.ok){
+    alert('공지 내용을 불러오지 못했습니다.');
+    return;
+  }
+
+  const data=await response.json();
+  const n=data[0];
+
+  const category=prompt('분류를 수정하세요.',n.tag);
+  if(category===null) return;
+
+  const title=prompt('제목을 수정하세요.',n.title);
+  if(title===null) return;
+
+  const date=prompt('날짜를 수정하세요. 예: 2026-10-03',n.notice_date);
+  if(date===null) return;
+
+  const content=prompt('내용을 수정하세요.',n.content);
+  if(content===null) return;
+
+  await updateNotice(id,category,title,date,content);
+}
+ async function updateNotice(id,category,title,date,content){
+  const token=sessionStorage.getItem('jb_admin_token');
+
+  const response=await fetch(
+    SUPABASE_URL+'/rest/v1/notices?id=eq.'+encodeURIComponent(id),
+    {
+      method:'PATCH',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+token,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify({
+        tag:category,
+        title:title,
+        notice_date:date,
+        content:content
+      })
+    }
+  );
+
+  if(!response.ok){
+    alert('공지 수정에 실패했습니다.');
+    return;
+  }
+
+  alert('공지가 수정되었습니다.');
+  manageNotices();
 }
  async function saveNoticeToSupabase(category,title,date,content){
   const token=sessionStorage.getItem('jb_admin_token');
