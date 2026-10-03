@@ -127,7 +127,49 @@ function adminPanel(){return `<div class="sectionhead" style="background:#263442
     return;
   }
 
-  alert('공지 등록 기능이 연결되었습니다.');
+  saveNoticeToSupabase(category,title,date,content);
+}
+ async function saveNoticeToSupabase(category,title,date,content){
+  const token=sessionStorage.getItem('jb_admin_token');
+
+  if(!token){
+    alert('관리자 로그인이 필요합니다.');
+    return;
+  }
+
+  try{
+    const response=await fetch(`${SUPABASE_URL}/rest/v1/notices`,{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':`Bearer ${token}`,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify({
+        tag:category,
+        title:title,
+        notice_date:date,
+        content:content
+      })
+    });
+
+    if(!response.ok){
+      const errorText=await response.text();
+      console.error(errorText);
+      alert('공지 등록 중 오류가 발생했습니다.');
+      return;
+    }
+
+    alert('공지가 등록되었습니다.');
+    document.getElementById('noticeTag').value='';
+    document.getElementById('noticeTitle').value='';
+    document.getElementById('noticeDate').value='';
+    document.getElementById('noticeContent').value='';
+  }catch(err){
+    console.error(err);
+    alert('공지 등록 중 오류가 발생했습니다.');
+  }
 }
  async function adminLogin(){
   const email = prompt('관리자 이메일을 입력하세요.');
